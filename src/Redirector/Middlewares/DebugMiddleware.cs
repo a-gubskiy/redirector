@@ -1,7 +1,6 @@
-using System.Net;
 using System.Text.Json;
 
-namespace Redirector;
+namespace Redirector.Middlewares;
 
 public class DebugMiddleware
 {
