@@ -8,7 +8,7 @@ var settings = builder.Configuration.Get<Settings>();
 builder.Services.AddSingleton<Settings>(settings!);
 
 Console.WriteLine("Settings:");
-Console.WriteLine(JsonSerializer.Serialize(settings));
+Console.WriteLine(JsonSerializer.Serialize(settings, new JsonSerializerOptions { WriteIndented = true }));
 
 var app = builder.Build();
 
@@ -17,6 +17,8 @@ if (app.Environment.IsDevelopment())
     
 }
 
-app.UseMiddleware<RedirectMiddleware>();
+app
+    .UseMiddleware<DebugMiddleware>()
+    .UseMiddleware<RedirectMiddleware>();
 
 app.Run();

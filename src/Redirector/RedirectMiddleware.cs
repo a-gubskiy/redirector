@@ -26,6 +26,8 @@ public class RedirectMiddleware
             {
                 if (redirect.Match(request.Host, request.Path))
                 {
+                    _logger.LogInformation($"Redirecting from {redirect.Source} to {redirect.Destination}");
+                    
                     context.Response.StatusCode = (int)HttpStatusCode.MovedPermanently;
                     context.Response.Headers.Location = redirect.Destination;
 
