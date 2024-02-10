@@ -1,24 +1,16 @@
-﻿FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS base
-
+﻿FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build-env
 WORKDIR /app
+
+COPY . ./
+WORKDIR /app/src/Redirector
+
+RUN dotnet restore
+RUN dotnet publish -c Release -o /out
+
+# Build runtime image
+FROM  mcr.microsoft.com/dotnet/aspnet:8.0
+WORKDIR /app
+COPY --from=build-env /out .
 
 EXPOSE 8080
-EXPOSE 8081
-
-FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
-ARG BUILD_CONFIGURATION=Release
-WORKDIR /src
-COPY ["src/Redirector/Redirector.csproj", "src/Redirector/"]
-RUN dotnet restore "src/Redirector/Redirector.csproj"
-COPY . .
-WORKDIR "/src/src/Redirector"
-RUN dotnet build "Redirector.csproj" -c $BUILD_CONFIGURATION -o /app/build
-
-FROM build AS publish
-ARG BUILD_CONFIGURATION=Release
-RUN dotnet publish "Redirector.csproj" -c $BUILD_CONFIGURATION -o /app/publish /p:UseAppHost=false
-
-FROM base AS final
-WORKDIR /app
-COPY --from=publish /app/publish .
-ENTRYPOINT ["dotnet", "Redirector.dll"]
+ENTRYPOINT ["dotnet", "/app/Redirector.dll"]
