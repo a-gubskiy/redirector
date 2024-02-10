@@ -10,8 +10,8 @@ builder.Services.AddSingleton<Settings>(p =>
 
     settings.Redirects = new List<Redirect>
     {
-        new Redirect("gymnasium.kiev.ua", "https://andrew.gubskiy.com/blog/item/gymnasium-kiev-ua/"),
-        new Redirect("agi.net.ua", "https://andrew.gubskiy.com/agi")
+        // new Redirect("gymnasium.kiev.ua", "https://andrew.gubskiy.com/blog/item/gymnasium-kiev-ua/"),
+        // new Redirect("agi.net.ua", "https://andrew.gubskiy.com/agi")
     };
 
     return settings;
