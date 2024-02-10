@@ -1,40 +1,41 @@
+using System.Text.Json;
+using Redirector;
+
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
-// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
-builder.Services.AddEndpointsApiExplorer();
+
+builder.Services.AddSingleton<Settings>(p =>
+{
+    var settings = new Settings();
+
+    return settings;
+});
+
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
 }
 
-app.UseHttpsRedirection();
+app.Use(Middleware);
 
-var summaries = new[]
+async Task Middleware(HttpContext context, Func<Task> next)
 {
-    "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
-};
+    var fullUrl =
+        $"{context.Request.Scheme}://{context.Request.Host}{context.Request.Path}{context.Request.QueryString}";
 
-app.MapGet("/weatherforecast", () =>
+    context.Response.ContentType = "application/json";
+
+    var json = JsonSerializer.Serialize(new
     {
-        var forecast = Enumerable.Range(1, 5).Select(index =>
-                new WeatherForecast
-                (
-                    DateOnly.FromDateTime(DateTime.Now.AddDays(index)),
-                    Random.Shared.Next(-20, 55),
-                    summaries[Random.Shared.Next(summaries.Length)]
-                ))
-            .ToArray();
-        return forecast;
-    })
-    .WithName("GetWeatherForecast");
+        Query = fullUrl,
+        Status = "OK"
+    });
+
+    await context.Response.WriteAsync(json);
+
+    await next();
+}
 
 app.Run();
-
-record WeatherForecast(DateOnly Date, int TemperatureC, string? Summary)
-{
-    public int TemperatureF => 32 + (int)(TemperatureC / 0.5556);
-}
