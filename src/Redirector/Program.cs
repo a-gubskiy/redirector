@@ -1,5 +1,5 @@
-using System.Text.Json;
 using Redirector;
+using Redirector.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -8,9 +8,14 @@ builder.Services.AddSingleton<Settings>(p =>
 {
     var settings = new Settings();
 
+    settings.Redirects = new List<Redirect>
+    {
+        new Redirect("gymnasium.kiev.ua", "https://andrew.gubskiy.com/blog/item/gymnasium-kiev-ua/"),
+        new Redirect("agi.net.ua", "https://andrew.gubskiy.com/agi")
+    };
+
     return settings;
 });
-
 
 var app = builder.Build();
 
@@ -18,24 +23,6 @@ if (app.Environment.IsDevelopment())
 {
 }
 
-app.Use(Middleware);
-
-async Task Middleware(HttpContext context, Func<Task> next)
-{
-    var fullUrl =
-        $"{context.Request.Scheme}://{context.Request.Host}{context.Request.Path}{context.Request.QueryString}";
-
-    context.Response.ContentType = "application/json";
-
-    var json = JsonSerializer.Serialize(new
-    {
-        Query = fullUrl,
-        Status = "OK"
-    });
-
-    await context.Response.WriteAsync(json);
-
-    await next();
-}
+app.UseMiddleware<RedirectMiddleware>();
 
 app.Run();

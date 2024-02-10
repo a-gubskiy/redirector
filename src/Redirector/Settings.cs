@@ -1,13 +1,9 @@
+using System.Collections.Immutable;
 using Redirector.Models;
 
 namespace Redirector;
 
 public class Settings
 {
-    public IReadOnlyCollection<Redirect> Redirects = new List<Redirect>();
-
-    public static IReadOnlyCollection<Redirect> LoadRedirects()
-    {
-        throw new NotImplementedException();
-    }
+    public IReadOnlyCollection<Redirect> Redirects { get; set; } = ImmutableArray<Redirect>.Empty;
 }
