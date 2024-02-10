@@ -7,39 +7,50 @@ public class RedirectMiddleware
 {
     private readonly RequestDelegate _next;
     private readonly Settings _settings;
+    private readonly ILogger _logger;
 
-    public RedirectMiddleware(RequestDelegate next, Settings settings)
+    public RedirectMiddleware(RequestDelegate next, Settings settings, ILogger<RedirectMiddleware> logger)
     {
         _next = next;
-        _settings = settings; // Now you have access to your settings
+        _settings = settings;
+        _logger = logger;
     }
-
+    
     public async Task InvokeAsync(HttpContext context)
     {
-        var fullUrl = $"{context.Request.Scheme}://{context.Request.Host}{context.Request.Path}{context.Request.QueryString}";
-
-        context.Response.ContentType = "application/json";
-
-        foreach (var redirect in _settings.Redirects)
+        try
         {
-            if (redirect.Match(context.Request.Host, context.Request.Path))
+            var request = context.Request;
+            
+            foreach (var redirect in _settings.Redirects)
             {
-                context.Response.StatusCode = (int)HttpStatusCode.MovedPermanently;
-                context.Response.Headers.Location = redirect.Destination;
-                
-                return;
+                if (redirect.Match(request.Host, request.Path))
+                {
+                    context.Response.StatusCode = (int)HttpStatusCode.MovedPermanently;
+                    context.Response.Headers.Location = redirect.Destination;
+
+                    return;
+                }
             }
+            
+            context.Response.ContentType = "application/json";
+            context.Response.StatusCode = (int)HttpStatusCode.NotFound;
+            
+            var json = JsonSerializer.Serialize(new
+            {
+                RequestUrl = $"{request.Scheme}://{request.Host}{request.Path}{request.QueryString}",
+                Status = "Redirect not found",
+            });
+            
+            await context.Response.WriteAsync(json);
         }
-
-        var json = JsonSerializer.Serialize(new
+        catch (Exception ex)
         {
-            context.Request.Host,
-            context.Request.Path,
-            Status = "Redirect not found",
-        });
-
-        context.Response.StatusCode = (int)HttpStatusCode.NotFound;
-
-        await context.Response.WriteAsync(json);
+            _logger.LogError(ex, "Error during process request");
+            
+            context.Response.StatusCode = (int)HttpStatusCode.InternalServerError;
+            
+            await context.Response.WriteAsync("Error during process request");
+        }
     }
 }
