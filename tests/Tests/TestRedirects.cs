@@ -15,43 +15,59 @@ public class TestRedirects
     {
         var redirect1 = new Redirect("gymnasium.kiev.ua", "https://andrew.gubskiy.com/blog/item/gymnasium-kiev-ua/");
         var redirect2 = new Redirect("agi.net.ua", "https://andrew.gubskiy.com/agi");
-        var redirect3 = new Redirect("torf.tv", "https://torf.bar");
-        
-      
-        var result1 = Match(redirect1, "https://gymnasium.kiev.ua");
-        var result2 = Match(redirect1, "http://gymnasium.kiev.ua");
-        var result3 = Match(redirect1, "http://gymnasium.kiev.ua/x/x/1/2/x/2");
-        var result4 = Match(redirect1, "gymnasium.kiev.ua/x/x/1/2/x/2");
-        var result5 = Match(redirect1, "gymnasium.kiev.ua");
-        
-        var result6 = Match(redirect2, "https://agi.net.ua/quote/1");
-        
-        var result7 = Match(redirect3, "https://dotnet.city/");
-        
+        var redirect3 = new Redirect("http://agi.net.ua/q", "https://andrew.gubskiy.com/agi");
+        var redirect4 = new Redirect("torf.tv", "https://torf.bar");
+
+        var result1 = redirect1.Match("https://gymnasium.kiev.ua");
+        var result2 = redirect1.Match("http://gymnasium.kiev.ua");
+        var result3 = redirect1.Match("http://gymnasium.kiev.ua/x/x/1/2/x/2");
+        var result4 = redirect1.Match("gymnasium.kiev.ua/x/x/1/2/x/2");
+        var result5 = redirect1.Match("gymnasium.kiev.ua");
+
+        var result6 = redirect2.Match("https://agi.net.ua/quote/1");
+
+        var result7 = redirect3.Match("http://agi.net.ua/q");
+        var result8 = redirect3.Match("http://dotnet.city/q/123");
+
+        var result9 = redirect4.Match("https://dotnet.city/");
+
         Assert.True(result1);
         Assert.True(result2);
         Assert.True(result3);
         Assert.True(result4);
         Assert.True(result5);
-        
+
         Assert.True(result6);
-        
-        Assert.False(result7);
+
+        Assert.True(result7);
+        Assert.False(result8);
+
+        Assert.False(result9);
     }
 
     private bool Match(Redirect redirect, string url)
     {
-        // Remove the scheme (http, https) from the URL
-        var strippedUrl = url
-            .Replace("http://", "")
-            .Replace("https://", "");
+        // Normalize the redirect source and input URL by removing schemes
+        var normalizedSource = redirect.Source
+            .Replace("http://", string.Empty)
+            .Replace("https://", string.Empty);
 
-        // Remove the path, if any, only keeping the domain part
-        var domain = strippedUrl.Split('/').FirstOrDefault();
+        var normalizedUrl = url
+            .Replace("http://", string.Empty)
+            .Replace("https://", string.Empty);
 
-        // Compare the domain of the URL with the Source of the redirect
-        var result = redirect.Source.Equals(domain, StringComparison.OrdinalIgnoreCase);
-        
-        return result;
+        // Check if the redirect source includes a path
+        if (normalizedSource.Contains('/'))
+        {
+            // For matching with path, the start of the URL should match the entire normalized source
+            return normalizedUrl.StartsWith(normalizedSource, StringComparison.OrdinalIgnoreCase);
+        }
+        else
+        {
+            // If the source does not include a path, compare the domain part only
+            var domain = normalizedUrl.Split('/').FirstOrDefault();
+
+            return normalizedSource.Equals(domain, StringComparison.OrdinalIgnoreCase);
+        }
     }
 }
