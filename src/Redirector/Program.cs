@@ -8,7 +8,7 @@ var configFilePath = Environment.GetEnvironmentVariable("CONFIG_FILE_PATH");
 
 if (File.Exists(configFilePath))
 {
-    builder.Configuration.AddJsonFile("", true);
+    builder.Configuration.AddJsonFile(configFilePath, true);
 }
 
 var settings = builder.Configuration.Get<Settings>();
