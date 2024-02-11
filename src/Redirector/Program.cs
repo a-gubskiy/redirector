@@ -4,16 +4,18 @@ using Redirector.Middlewares;
 
 var builder = WebApplication.CreateBuilder(args);
 
+var configFilePath = Environment.GetEnvironmentVariable("CONFIG_FILE_PATH");
+
+if (File.Exists(configFilePath))
+{
+    builder.Configuration.AddJsonFile("", true);
+}
+
 var settings = builder.Configuration.Get<Settings>();
 
-builder.Services.AddSingleton<Settings>(settings!);
-
-builder.Services.AddSingleton<IRedirectRouter>(p =>
-{
-    var logger = p.GetService<ILogger<RedirectRouter>>();
-
-    return new RedirectRouter(settings!.Redirects, logger!);
-});
+builder.Services.AddSingleton(settings!);
+builder.Services.AddSingleton(settings!.Redirects);
+builder.Services.AddSingleton<IRedirectRouter, RedirectRouter>();
 
 var app = builder.Build();
 
