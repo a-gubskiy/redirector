@@ -1,6 +1,8 @@
 using System;
-using System.Linq;
+using System.Collections.Generic;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging.Abstractions;
+using Redirector;
 using Redirector.Models;
 using Xunit;
 
@@ -43,29 +45,63 @@ public class TestRedirects
         Assert.False(result9);
     }
 
-    private bool Match(Redirect redirect, string url)
+    [Fact]
+    public async Task TestRedirectRouter()
     {
-        // Normalize the redirect source and input URL by removing schemes
-        var normalizedSource = redirect.Source
-            .Replace("http://", string.Empty)
-            .Replace("https://", string.Empty);
-
-        var normalizedUrl = url
-            .Replace("http://", string.Empty)
-            .Replace("https://", string.Empty);
-
-        // Check if the redirect source includes a path
-        if (normalizedSource.Contains('/'))
+        var redirectRouter = new RedirectRouter(new List<Redirect>
         {
-            // For matching with path, the start of the URL should match the entire normalized source
-            return normalizedUrl.StartsWith(normalizedSource, StringComparison.OrdinalIgnoreCase);
-        }
-        else
-        {
-            // If the source does not include a path, compare the domain part only
-            var domain = normalizedUrl.Split('/').FirstOrDefault();
+            new Redirect("gymnasium.kiev.ua", "https://andrew.gubskiy.com/blog/item/gymnasium-kiev-ua/"),
+            new Redirect("agi.net.ua", "https://andrew.gubskiy.com/agi"),
+            new Redirect("http://agi.net.ua/q", "https://andrew.gubskiy.com/agi"),
+            new Redirect("torf.tv", "https://torf.bar"),
+        }, NullLogger<RedirectRouter>.Instance);
 
-            return normalizedSource.Equals(domain, StringComparison.OrdinalIgnoreCase);
-        }
+
+        var result1 = await redirectRouter.Route("https://gymnasium.kiev.ua");
+        var result2 = await redirectRouter.Route("http://gymnasium.kiev.ua");
+        var result3 = await redirectRouter.Route(new Uri("http://gymnasium.kiev.ua/x/x/1/2/x/2"));
+        var result4 = await redirectRouter.Route("gymnasium.kiev.ua/x/x/1/2/x/2");
+        var result5 = await redirectRouter.Route("gymnasium.kiev.ua");
+
+        var result6 = await redirectRouter.Route("https://agi.net.ua/quote/1");
+        var result7 = await redirectRouter.Route("http://agi.net.ua/q");
+        
+        var result8 = await redirectRouter.Route("http://dotnet.city/q/123");
+
+        var result9 = await redirectRouter.Route(new Uri("https://dotnet.city/"));
+        
+        Assert.Equal("https://andrew.gubskiy.com/blog/item/gymnasium-kiev-ua/", result1.ToString());
+        Assert.Equal("https://andrew.gubskiy.com/blog/item/gymnasium-kiev-ua/", result2.ToString());
+        Assert.Equal("https://andrew.gubskiy.com/blog/item/gymnasium-kiev-ua/", result3.ToString());
+        Assert.Equal("https://andrew.gubskiy.com/blog/item/gymnasium-kiev-ua/", result4.ToString());
+        Assert.Equal("https://andrew.gubskiy.com/blog/item/gymnasium-kiev-ua/", result5.ToString());
+        
+        Assert.Equal("https://andrew.gubskiy.com/agi", result6.ToString());
+        Assert.Equal("https://andrew.gubskiy.com/agi", result7.ToString());
+
+        Assert.Null(result8);
+        
+        Assert.Null(result9);
+    }
+    
+    [Fact]
+    public async Task TestEmptyRequest()
+    {
+        var redirectRouter = new RedirectRouter(new List<Redirect>
+        {
+            new Redirect("gymnasium.kiev.ua", "https://andrew.gubskiy.com/blog/item/gymnasium-kiev-ua/"),
+            new Redirect("agi.net.ua", "https://andrew.gubskiy.com/agi"),
+            new Redirect("http://agi.net.ua/q", "https://andrew.gubskiy.com/agi"),
+            new Redirect("torf.tv", "https://torf.bar"),
+        }, NullLogger<RedirectRouter>.Instance);
+
+
+        var result1 = await redirectRouter.Route(" ");
+        var result2 = await redirectRouter.Route("");
+        
+
+        Assert.Null(result1);
+        
+        Assert.Null(result2);
     }
 }

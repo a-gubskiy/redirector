@@ -1,18 +1,21 @@
 using System.Net;
 using System.Text.Json;
+using Microsoft.AspNetCore.Http.Extensions;
 
 namespace Redirector.Middlewares;
 
 public class RedirectMiddleware
 {
     private readonly RequestDelegate _next;
-    private readonly Settings _settings;
+    private readonly IRedirectRouter _redirectRouter;
+
     private readonly ILogger _logger;
 
-    public RedirectMiddleware(RequestDelegate next, Settings settings, ILogger<RedirectMiddleware> logger)
+    public RedirectMiddleware(RequestDelegate next, IRedirectRouter redirectRouter, ILogger<RedirectMiddleware> logger)
     {
         _next = next;
-        _settings = settings;
+        _redirectRouter = redirectRouter;
+
         _logger = logger;
     }
 
@@ -20,22 +23,18 @@ public class RedirectMiddleware
     {
         try
         {
-            var request = context.Request;
+            var requestUrl = context.Request.GetEncodedUrl();
+            
+            var redirect = await _redirectRouter.Route(context.Request);
 
-            foreach (var redirect in _settings.Redirects)
+            if (redirect != null)
             {
-                if (redirect.Match(request.Host, request.Path))
-                {
-                    _logger.LogInformation($"Redirecting from {redirect.Source} to {redirect.Destination}");
+                _logger.LogInformation($"Redirecting from {requestUrl} to {redirect}");
 
-                    context.Response.StatusCode = (int)HttpStatusCode.MovedPermanently;
-                    context.Response.Headers.Location = redirect.Destination;
+                context.Response.Redirect(redirect.ToString(), true);
 
-                    return;
-                }
+                return;
             }
-
-            var requestUrl = $"{request.Scheme}://{request.Host}{request.Path}{request.QueryString}";
 
             _logger.LogWarning($"No redirects found for {requestUrl}");
 

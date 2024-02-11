@@ -5,7 +5,15 @@ using Redirector.Middlewares;
 var builder = WebApplication.CreateBuilder(args);
 
 var settings = builder.Configuration.Get<Settings>();
+
 builder.Services.AddSingleton<Settings>(settings!);
+
+builder.Services.AddSingleton<IRedirectRouter>(p =>
+{
+    var logger = p.GetService<ILogger<RedirectRouter>>();
+
+    return new RedirectRouter(settings!.Redirects, logger!);
+});
 
 var app = builder.Build();
 
