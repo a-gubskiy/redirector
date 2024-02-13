@@ -1,3 +1,5 @@
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using Redirector.Models;
 
 namespace Redirector;
@@ -15,14 +17,19 @@ public class RedirectRouter : IRedirectRouter
 
     public RedirectRouter(IReadOnlyCollection<Redirect> redirects, ILogger<RedirectRouter> logger)
     {
-        _redirects = redirects;
         _logger = logger;
+        _redirects = redirects;
+
+        _logger.LogInformation($"{nameof(RedirectRouter)} created. Redirects:");
+        _logger.LogInformation($"{JsonSerializer.Serialize(redirects, new JsonSerializerOptions { WriteIndented = true })}");
     }
 
     public async Task<Uri?> Route(string url)
     {
         if (string.IsNullOrWhiteSpace(url))
         {
+            _logger.LogWarning("Empty url detected");
+            
             return null;
         }
         
@@ -30,11 +37,13 @@ public class RedirectRouter : IRedirectRouter
         {
             if (redirect.Match(url))
             {
-                _logger.LogInformation($"Found redirect rul from {redirect.Source} to {redirect.Destination}");
+                _logger.LogInformation($"Found redirect rule from {redirect.Source} to {redirect.Destination} for {url}");
 
                 return new Uri(redirect.Destination);
             }
         }
+        
+        _logger.LogWarning($"No redirects found for {url}");
 
         return null;
     }
