@@ -17,6 +17,10 @@ builder.Services.AddSingleton(settings!);
 builder.Services.AddSingleton(settings!.Redirects);
 builder.Services.AddSingleton<IRedirectRouter, RedirectRouter>();
 
+builder.Logging
+    .ClearProviders()
+    .AddAzureWebAppDiagnostics();
+
 var app = builder.Build();
 
 if (app.Environment.IsDevelopment())
@@ -25,10 +29,6 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseMiddleware<RedirectMiddleware>();
-
-builder.Logging
-    .ClearProviders()
-    .AddAzureWebAppDiagnostics();
 
 var logger = app.Services.GetService<ILogger<Settings>>()!;
 
