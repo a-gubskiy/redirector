@@ -26,6 +26,10 @@ if (app.Environment.IsDevelopment())
 
 app.UseMiddleware<RedirectMiddleware>();
 
+builder.Logging
+    .ClearProviders()
+    .AddAzureWebAppDiagnostics();
+
 var logger = app.Services.GetService<ILogger<Settings>>()!;
 
 logger.LogInformation("Settings: ");
