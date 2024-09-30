@@ -33,5 +33,5 @@ jobs:
         file: ./Dockerfile
         push: true
         tags: |
-          ghcr.io/ernado-x/redirector:latest
-          ghcr.io/ernado-x/redirector:${{ steps.date.outputs.date }}
+          ghcr.io/a-gubskiy/redirector:latest
+          ghcr.io/a-gubskiy/redirector:${{ steps.date.outputs.date }}
